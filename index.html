@@ -457,7 +457,23 @@
     .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
     .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    /* Desktop: hide view toggle */
+    /* ── MOBILE: nonaktifkan sticky kolom agar data tidak tertutup ── */
+    @media (max-width: 639px) {
+      th:nth-child(1), td:nth-child(1),
+      th:nth-child(2), td:nth-child(2) {
+        position: static !important;
+        background: inherit !important;
+      }
+      thead th:nth-child(1), thead th:nth-child(2) {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 10 !important;
+        background: var(--surface2) !important;
+      }
+      table { min-width: 600px; }
+    }
+
+    /* Desktop: hide view toggle, show table only */
     @media (min-width: 640px) {
       .view-toggle { display: none; }
       .table-wrap { display: block !important; max-height: calc(100vh - 360px); }
@@ -471,7 +487,7 @@
   <div class="header-inner">
     <div class="logo">
       <div class="logo-icon">📋</div>
-      PENILAIAN SUMATIF AKHIR JENJANG <span>TAHUN 2026</span>
+      Hasil Ujian <span>Siswa</span>
     </div>
     <button class="btn btn-primary" id="btnRefresh" onclick="loadData()">
       🔄 Refresh
