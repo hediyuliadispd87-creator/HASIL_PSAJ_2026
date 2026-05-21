@@ -457,19 +457,18 @@
     .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
     .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-    /* ── MOBILE: nonaktifkan sticky kolom agar data tidak tertutup ── */
+    /* ── MOBILE: nonaktifkan semua sticky kolom ── */
     @media (max-width: 639px) {
-      th:nth-child(1), td:nth-child(1),
-      th:nth-child(2), td:nth-child(2) {
+      th, td {
         position: static !important;
-        background: inherit !important;
+        z-index: auto !important;
       }
-      thead th:nth-child(1), thead th:nth-child(2) {
-        position: sticky !important;
-        top: 0 !important;
-        z-index: 10 !important;
-        background: var(--surface2) !important;
+      thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
       }
+      thead tr { background: var(--surface2); }
       table { min-width: 600px; }
     }
 
