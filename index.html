@@ -1,0 +1,874 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+  <title>Hasil Ujian Siswa</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+  <style>
+    :root {
+      --bg:        #0d1117;
+      --surface:   #161b22;
+      --surface2:  #21262d;
+      --border:    #30363d;
+      --accent:    #f0a500;
+      --accent2:   #e05c00;
+      --text:      #e6edf3;
+      --text-muted:#8b949e;
+      --green:     #3fb950;
+      --red:       #f85149;
+      --blue:      #58a6ff;
+      --radius:    10px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: linear-gradient(135deg, #1a1200 0%, #0d1117 60%);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      backdrop-filter: blur(8px);
+    }
+    .header-inner {
+      max-width: 1400px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 56px;
+      gap: .75rem;
+    }
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      font-size: 1rem;
+      font-weight: 800;
+      color: var(--accent);
+      letter-spacing: -.5px;
+    }
+    .logo span { color: var(--text); font-weight: 600; }
+    .logo-icon {
+      width: 30px; height: 30px;
+      background: var(--accent);
+      border-radius: 7px;
+      display: grid;
+      place-items: center;
+      font-size: 15px;
+      flex-shrink: 0;
+    }
+
+    /* ── MAIN ── */
+    main {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
+
+    /* ── STATS BAR ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: .75rem;
+      margin-bottom: 1rem;
+    }
+    @media (min-width: 640px) {
+      .stats-bar { grid-template-columns: repeat(4, 1fr); }
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .875rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .15rem;
+    }
+    .stat-label {
+      font-size: .68rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted);
+    }
+    .stat-value {
+      font-family: 'DM Mono', monospace;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: var(--accent);
+      line-height: 1.1;
+    }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: .875rem 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: .65rem;
+      margin-bottom: 1rem;
+    }
+    .filter-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .65rem;
+    }
+    .filter-group {
+      display: flex;
+      flex-direction: column;
+      gap: .28rem;
+    }
+    .filter-group.full { grid-column: 1 / -1; }
+    .filter-group label {
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted);
+    }
+    select, input[type="text"] {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      padding: .5rem .75rem;
+      font-family: inherit;
+      font-size: .875rem;
+      outline: none;
+      transition: border-color .2s;
+      width: 100%;
+      -webkit-appearance: none;
+      appearance: none;
+      min-height: 40px;
+    }
+    select {
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%238b949e' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right .75rem center;
+      padding-right: 2rem;
+    }
+    select:focus, input[type="text"]:focus {
+      border-color: var(--accent);
+    }
+    input[type="text"]::placeholder { color: var(--text-muted); }
+
+    .toolbar-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: .5rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: .35rem;
+      padding: .6rem 1rem;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: .85rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all .2s;
+      white-space: nowrap;
+      min-height: 40px;
+      touch-action: manipulation;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #0d1117;
+      padding: .5rem .9rem;
+      font-size: .8rem;
+    }
+    .btn-primary:hover, .btn-primary:active { background: #ffc030; }
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text);
+    }
+    .btn-outline:hover, .btn-outline:active { border-color: var(--accent); color: var(--accent); }
+    .btn-green {
+      background: #1a3a1a;
+      border: 1px solid var(--green);
+      color: var(--green);
+    }
+    .btn-green:hover, .btn-green:active { background: #1f4a1f; }
+    .btn:disabled { opacity: .45; pointer-events: none; }
+
+    /* ── INFO ROW ── */
+    .info-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: .3rem;
+      margin-bottom: .5rem;
+      font-size: .78rem;
+      color: var(--text-muted);
+    }
+    .info-row strong { color: var(--text); }
+
+    /* ── VIEW TOGGLE ── */
+    .view-toggle {
+      display: flex;
+      gap: .4rem;
+      align-items: center;
+    }
+    .view-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      border-radius: 6px;
+      padding: .3rem .6rem;
+      font-size: .75rem;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .2s;
+      touch-action: manipulation;
+    }
+    .view-btn.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #0d1117;
+    }
+
+    /* ── TABLE VIEW ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: auto;
+      -webkit-overflow-scrolling: touch;
+      max-height: calc(100vh - 380px);
+    }
+    @media (max-width: 639px) {
+      .table-wrap { display: none; }
+      .table-wrap.active { display: block; }
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .8rem;
+    }
+    thead { position: sticky; top: 0; z-index: 10; }
+    thead tr { background: var(--surface2); }
+    th {
+      padding: .65rem .875rem;
+      text-align: left;
+      font-size: .68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--text-muted);
+      border-bottom: 1px solid var(--border);
+      white-space: nowrap;
+      user-select: none;
+    }
+    th.sortable { cursor: pointer; }
+    th.sortable:hover, th.sortable:active { color: var(--accent); }
+    th .sort-icon { margin-left: 3px; opacity: .4; }
+    th.asc .sort-icon::after { content: "↑"; opacity: 1; color: var(--accent); }
+    th.desc .sort-icon::after { content: "↓"; opacity: 1; color: var(--accent); }
+    th .sort-icon::after { content: "↕"; }
+
+    th:nth-child(1), td:nth-child(1) { position: sticky; left: 0; z-index: 5; background: var(--surface2); min-width: 52px; }
+    th:nth-child(2), td:nth-child(2) { position: sticky; left: 52px; z-index: 5; background: var(--surface2); min-width: 140px; }
+    thead th:nth-child(1), thead th:nth-child(2) { z-index: 15; }
+
+    tbody tr { border-bottom: 1px solid #1e2530; transition: background .15s; }
+    tbody tr:hover td, tbody tr:active td { background: #1a2030 !important; }
+    tbody tr:nth-child(even) td:nth-child(1),
+    tbody tr:nth-child(even) td:nth-child(2) { background: #181d28; }
+
+    td {
+      padding: .55rem .875rem;
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      font-size: .78rem;
+    }
+    td.text-col { font-family: 'Plus Jakarta Sans', sans-serif; font-size: .82rem; }
+
+    .score { border-radius: 4px; padding: 2px 5px; font-weight: 600; }
+    .score.high  { color: var(--green); }
+    .score.mid   { color: var(--accent); }
+    .score.low   { color: var(--red); }
+
+    .badge-kelas {
+      background: #1e2a3a;
+      border: 1px solid #2a4060;
+      color: var(--blue);
+      border-radius: 4px;
+      padding: 2px 6px;
+      font-size: .73rem;
+      font-weight: 600;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* ── CARD VIEW (mobile) ── */
+    .cards-wrap {
+      display: none;
+      flex-direction: column;
+      gap: .65rem;
+    }
+    @media (max-width: 639px) {
+      .cards-wrap { display: flex; }
+      .cards-wrap.hidden { display: none; }
+    }
+    @media (min-width: 640px) {
+      .cards-wrap.active { display: flex; }
+      .table-wrap.active-desktop { display: block; }
+    }
+
+    .student-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .student-card:hover { border-color: var(--accent); }
+    .card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 1rem;
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+      gap: .5rem;
+    }
+    .card-name {
+      font-weight: 700;
+      font-size: .92rem;
+      color: var(--text);
+      flex: 1;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    .card-meta {
+      display: flex;
+      align-items: center;
+      gap: .4rem;
+      flex-shrink: 0;
+    }
+    .card-no {
+      font-family: 'DM Mono', monospace;
+      font-size: .75rem;
+      color: var(--text-muted);
+    }
+    .card-body {
+      padding: .75rem 1rem;
+    }
+    .card-info-row {
+      display: flex;
+      gap: .5rem;
+      margin-bottom: .65rem;
+      flex-wrap: wrap;
+    }
+    .card-info-item {
+      display: flex;
+      gap: .3rem;
+      align-items: center;
+      font-size: .78rem;
+    }
+    .card-info-label { color: var(--text-muted); }
+    .card-info-val { color: var(--text); font-weight: 600; }
+    .scores-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: .4rem;
+    }
+    .score-chip {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: .4rem .5rem;
+      display: flex;
+      flex-direction: column;
+      gap: .1rem;
+    }
+    .score-chip-label {
+      font-size: .62rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .score-chip-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 1rem;
+      font-weight: 500;
+    }
+    .score-chip-val.high  { color: var(--green); }
+    .score-chip-val.mid   { color: var(--accent); }
+    .score-chip-val.low   { color: var(--red); }
+    .score-chip.hl { border-color: var(--accent); background: rgba(240,165,0,.08); }
+
+    /* ── LOADING / EMPTY ── */
+    .loading-wrap, .empty-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 3.5rem 1.5rem;
+      gap: .875rem;
+      color: var(--text-muted);
+      text-align: center;
+    }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin .8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .empty-icon { font-size: 2.2rem; }
+
+    th.hl-col { border-top: 2px solid var(--accent); color: var(--accent) !important; }
+    td.hl-col { background: rgba(240,165,0,.06); }
+
+    /* Scrollbar */
+    .table-wrap::-webkit-scrollbar { height: 5px; width: 5px; }
+    .table-wrap::-webkit-scrollbar-track { background: var(--surface2); }
+    .table-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 99px; }
+    .table-wrap::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+    /* Desktop: hide view toggle */
+    @media (min-width: 640px) {
+      .view-toggle { display: none; }
+      .table-wrap { display: block !important; max-height: calc(100vh - 360px); }
+      .cards-wrap { display: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo">
+      <div class="logo-icon">📋</div>
+      PENILAIAN SUMATIF AKHIR JENJANG <span>TAHUN 2026</span>
+    </div>
+    <button class="btn btn-primary" id="btnRefresh" onclick="loadData()">
+      🔄 Refresh
+    </button>
+  </div>
+</header>
+
+<main>
+  <!-- STATS -->
+  <div class="stats-bar">
+    <div class="stat-card"><div class="stat-label">Total Peserta</div><div class="stat-value" id="statTotal">—</div></div>
+    <div class="stat-card"><div class="stat-label">Ditampilkan</div><div class="stat-value" id="statShown">—</div></div>
+    <div class="stat-card"><div class="stat-label">Jml Kelas</div><div class="stat-value" id="statKelas">—</div></div>
+    <div class="stat-card"><div class="stat-label">Rata-rata</div><div class="stat-value" id="statAvg">—</div></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="filter-row">
+      <div class="filter-group">
+        <label>Filter Kelas</label>
+        <select id="filterKelas" onchange="applyFilter()">
+          <option value="">Semua Kelas</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label>Sorot Mapel</label>
+        <select id="filterMapel" onchange="applyFilter()">
+          <option value="">Semua Mapel</option>
+        </select>
+      </div>
+    </div>
+    <div class="filter-group full">
+      <label>Cari Nama / No Peserta</label>
+      <input type="text" id="searchInput" placeholder="Ketik nama atau nomor..." oninput="applyFilter()"/>
+    </div>
+    <div class="toolbar-actions">
+      <button class="btn btn-outline" onclick="resetFilter()">✕ Reset</button>
+      <button class="btn btn-green" id="btnExcel" onclick="exportExcel()" disabled>⬇ Excel</button>
+    </div>
+  </div>
+
+  <!-- INFO ROW -->
+  <div class="info-row">
+    <span id="infoText">Memuat data...</span>
+    <div style="display:flex;align-items:center;gap:.6rem;">
+      <span id="infoSort" style="font-size:.72rem;"></span>
+      <div class="view-toggle">
+        <button class="view-btn active" id="btnCardView" onclick="setView('card')">Cards</button>
+        <button class="view-btn" id="btnTableView" onclick="setView('table')">Tabel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CARD VIEW (mobile default) -->
+  <div class="cards-wrap" id="cardsWrap">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <span>Mengambil data dari spreadsheet…</span>
+    </div>
+  </div>
+
+  <!-- TABLE VIEW -->
+  <div class="table-wrap" id="tableWrap">
+    <div class="loading-wrap">
+      <div class="spinner"></div>
+      <span>Mengambil data…</span>
+    </div>
+  </div>
+</main>
+
+<script>
+const GAS_URL = "https://script.google.com/macros/s/AKfycby3U4rM3NPv3b5euE0pCWQPkyY9WK8lOW2SHIFjBVwfXGDRMieQKe0AO9eXxwmZFIfw/exec";
+
+let allData    = [];
+let allHeaders = [];
+let kelasList  = [];
+let mapelList  = [];
+let filtered   = [];
+let sortCol    = -1;
+let sortDir    = 1;
+let iKelas     = -1;
+let mapelIndices = {};
+let currentView = 'card'; // 'card' | 'table'
+
+// ── VIEW TOGGLE ──
+function setView(view) {
+  currentView = view;
+  document.getElementById('btnCardView').classList.toggle('active', view === 'card');
+  document.getElementById('btnTableView').classList.toggle('active', view === 'table');
+  const cardsWrap = document.getElementById('cardsWrap');
+  const tableWrap = document.getElementById('tableWrap');
+  if (view === 'card') {
+    cardsWrap.classList.remove('hidden');
+    tableWrap.style.display = 'none';
+  } else {
+    cardsWrap.classList.add('hidden');
+    tableWrap.style.display = 'block';
+  }
+}
+
+// ── LOAD DATA ──
+async function loadData() {
+  document.getElementById("btnRefresh").disabled = true;
+  const loadHtml = `<div class="loading-wrap"><div class="spinner"></div><span>Mengambil data…</span></div>`;
+  document.getElementById("tableWrap").innerHTML = loadHtml;
+  document.getElementById("cardsWrap").innerHTML = loadHtml;
+
+  try {
+    if (typeof google !== "undefined" && google.script) {
+      google.script.run
+        .withSuccessHandler(onDataLoaded)
+        .withFailureHandler(onError)
+        .getDataFromSheet();
+    } else {
+      if (GAS_URL === "GANTI_DENGAN_URL_WEB_APP_GAS_ANDA") {
+        onDataLoaded(getDemoData());
+        return;
+      }
+      const res = await fetch(GAS_URL + "?action=getData");
+      const json = await res.json();
+      onDataLoaded(json);
+    }
+  } catch (err) {
+    onError(err);
+  }
+}
+
+function onDataLoaded(result) {
+  document.getElementById("btnRefresh").disabled = false;
+  if (result.error) { onError({ message: result.error }); return; }
+
+  allHeaders = result.headers || [];
+  allData    = result.data    || [];
+  kelasList  = result.kelasList || [];
+  mapelList  = result.mapelList  || [];
+
+  iKelas = allHeaders.findIndex(h => h.toString().toLowerCase() === "kelas");
+  mapelList.forEach(m => {
+    const idx = allHeaders.findIndex(h => h.toString().toLowerCase() === m.toLowerCase());
+    if (idx >= 0) mapelIndices[m] = idx;
+  });
+
+  const selKelas = document.getElementById("filterKelas");
+  selKelas.innerHTML = `<option value="">Semua Kelas (${kelasList.length})</option>`;
+  kelasList.forEach(k => {
+    const o = document.createElement("option");
+    o.value = k; o.textContent = k;
+    selKelas.appendChild(o);
+  });
+
+  const selMapel = document.getElementById("filterMapel");
+  selMapel.innerHTML = `<option value="">Semua Mapel</option>`;
+  mapelList.forEach(m => {
+    const o = document.createElement("option");
+    o.value = m; o.textContent = m.toUpperCase();
+    selMapel.appendChild(o);
+  });
+
+  document.getElementById("statTotal").textContent = allData.length;
+  document.getElementById("statKelas").textContent = kelasList.length;
+  document.getElementById("btnExcel").disabled = false;
+  applyFilter();
+}
+
+function onError(err) {
+  document.getElementById("btnRefresh").disabled = false;
+  const errHtml = `<div class="empty-wrap"><div class="empty-icon">⚠️</div><span>Gagal memuat data: ${err.message || err}</span></div>`;
+  document.getElementById("tableWrap").innerHTML = errHtml;
+  document.getElementById("cardsWrap").innerHTML = errHtml;
+}
+
+// ── FILTER ──
+function applyFilter() {
+  const kelas  = document.getElementById("filterKelas").value.toLowerCase();
+  const search = document.getElementById("searchInput").value.toLowerCase().trim();
+
+  filtered = allData.filter(row => {
+    const kelasVal = iKelas >= 0 ? (row[iKelas] || "").toString().toLowerCase() : "";
+    const nama     = (row[1] || "").toString().toLowerCase();
+    const noPes    = (row[0] || "").toString().toLowerCase();
+    if (kelas  && kelasVal !== kelas) return false;
+    if (search && !nama.includes(search) && !noPes.includes(search)) return false;
+    return true;
+  });
+
+  if (sortCol >= 0) {
+    filtered.sort((a, b) => {
+      const va = a[sortCol]; const vb = b[sortCol];
+      const na = parseFloat(va); const nb = parseFloat(vb);
+      if (!isNaN(na) && !isNaN(nb)) return (na - nb) * sortDir;
+      return va.toString().localeCompare(vb.toString()) * sortDir;
+    });
+  }
+
+  const hlMapel = document.getElementById("filterMapel").value;
+  renderCards(hlMapel);
+  renderTable(hlMapel);
+  updateStats();
+}
+
+// ── RENDER CARDS ──
+function renderCards(hlMapel) {
+  const wrap = document.getElementById("cardsWrap");
+  if (filtered.length === 0) {
+    wrap.innerHTML = `<div class="empty-wrap"><div class="empty-icon">🔍</div><span>Tidak ada data sesuai filter.</span></div>`;
+    document.getElementById("infoText").textContent = "Tidak ada hasil.";
+    return;
+  }
+
+  // Cari kolom non-mapel non-utama untuk info baris (sekolah, ruang, dll)
+  const extraCols = allHeaders
+    .map((h, i) => ({ h, i }))
+    .filter(({h, i}) => {
+      const hl = h.toString().toLowerCase();
+      return i > 1 && hl !== 'kelas' && !mapelList.some(m => m.toLowerCase() === hl);
+    });
+
+  let html = '';
+  filtered.forEach(row => {
+    const no    = row[0] !== undefined ? row[0] : '';
+    const nama  = row[1] !== undefined ? row[1] : '';
+    const kelas = iKelas >= 0 ? row[iKelas] : '';
+
+    html += `<div class="student-card">
+      <div class="card-header">
+        <div class="card-name">${nama}</div>
+        <div class="card-meta">
+          <span class="card-no">${no}</span>
+          ${kelas ? `<span class="badge-kelas">${kelas}</span>` : ''}
+        </div>
+      </div>
+      <div class="card-body">`;
+
+    // Extra info (sekolah, ruang, dll)
+    if (extraCols.length > 0) {
+      html += `<div class="card-info-row">`;
+      extraCols.forEach(({h, i}) => {
+        const val = row[i] !== undefined && row[i] !== '' ? row[i] : '—';
+        html += `<div class="card-info-item">
+          <span class="card-info-label">${h}:</span>
+          <span class="card-info-val">${val}</span>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    // Scores
+    if (mapelList.length > 0) {
+      html += `<div class="scores-grid">`;
+      mapelList.forEach(m => {
+        const idx = mapelIndices[m];
+        const val = idx !== undefined ? row[idx] : '';
+        const n   = parseFloat(val);
+        let cls   = '';
+        if (!isNaN(n)) cls = n >= 80 ? 'high' : n >= 65 ? 'mid' : 'low';
+        const isHl = hlMapel && m.toLowerCase() === hlMapel.toLowerCase();
+        html += `<div class="score-chip${isHl ? ' hl' : ''}">
+          <div class="score-chip-label">${m}</div>
+          <div class="score-chip-val ${cls}">${val !== '' && val !== undefined ? val : '—'}</div>
+        </div>`;
+      });
+      html += `</div>`;
+    }
+
+    html += `</div></div>`;
+  });
+
+  wrap.innerHTML = html;
+  document.getElementById("infoText").innerHTML =
+    `Menampilkan <strong>${filtered.length}</strong> dari <strong>${allData.length}</strong> peserta`;
+}
+
+// ── RENDER TABLE ──
+function renderTable(hlMapel) {
+  const wrap = document.getElementById("tableWrap");
+  if (filtered.length === 0) {
+    wrap.innerHTML = `<div class="empty-wrap"><div class="empty-icon">🔍</div><span>Tidak ada data sesuai filter.</span></div>`;
+    return;
+  }
+
+  const hlIdx = hlMapel && mapelIndices[hlMapel] >= 0 ? mapelIndices[hlMapel] : -1;
+
+  let html = `<table id="mainTable"><thead><tr>`;
+  allHeaders.forEach((h, i) => {
+    const isHl = i === hlIdx ? " hl-col" : "";
+    const isSortActive = i === sortCol ? (sortDir === 1 ? " asc" : " desc") : "";
+    html += `<th class="sortable${isHl}${isSortActive}" onclick="sortBy(${i})">${h}<span class="sort-icon"></span></th>`;
+  });
+  html += `</tr></thead><tbody>`;
+
+  filtered.forEach(row => {
+    html += `<tr>`;
+    allHeaders.forEach((h, i) => {
+      const val   = row[i] !== undefined && row[i] !== null ? row[i] : "";
+      const hLow  = h.toString().toLowerCase();
+      if (hLow === "kelas") {
+        html += `<td class="text-col${i === hlIdx ? " hl-col" : ""}"><span class="badge-kelas">${val}</span></td>`;
+        return;
+      }
+      const isMapel = mapelList.some(m => m.toLowerCase() === hLow);
+      if (isMapel) {
+        const n = parseFloat(val);
+        let cls = "";
+        if (!isNaN(n)) cls = n >= 80 ? "high" : n >= 65 ? "mid" : "low";
+        html += `<td class="${i === hlIdx ? "hl-col" : ""}"><span class="score ${cls}">${val !== "" ? val : "—"}</span></td>`;
+        return;
+      }
+      html += `<td class="${i <= 1 ? "text-col" : ""}${i === hlIdx ? " hl-col" : ""}">${val}</td>`;
+    });
+    html += `</tr>`;
+  });
+
+  html += `</tbody></table>`;
+  wrap.innerHTML = html;
+}
+
+function updateStats() {
+  document.getElementById("statShown").textContent = filtered.length;
+  if (filtered.length > 0 && Object.keys(mapelIndices).length > 0) {
+    let total = 0, count = 0;
+    filtered.forEach(row => {
+      Object.values(mapelIndices).forEach(idx => {
+        const n = parseFloat(row[idx]);
+        if (!isNaN(n)) { total += n; count++; }
+      });
+    });
+    document.getElementById("statAvg").textContent = count > 0 ? (total / count).toFixed(1) : "—";
+  }
+}
+
+function sortBy(colIdx) {
+  if (sortCol === colIdx) sortDir *= -1;
+  else { sortCol = colIdx; sortDir = 1; }
+  applyFilter();
+  document.getElementById("infoSort").textContent =
+    `${allHeaders[colIdx]} ${sortDir === 1 ? "↑" : "↓"}`;
+}
+
+function resetFilter() {
+  document.getElementById("filterKelas").value = "";
+  document.getElementById("filterMapel").value = "";
+  document.getElementById("searchInput").value = "";
+  sortCol = -1; sortDir = 1;
+  document.getElementById("infoSort").textContent = "";
+  applyFilter();
+}
+
+function exportExcel() {
+  if (filtered.length === 0) return;
+  const kelas = document.getElementById("filterKelas").value || "Semua";
+  const mapel = document.getElementById("filterMapel").value || "Semua";
+  const wsData = [allHeaders, ...filtered];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  const colWidths = allHeaders.map((h, i) => {
+    const maxLen = Math.max(h.toString().length, ...filtered.map(row => (row[i] !== undefined ? row[i].toString().length : 0)));
+    return { wch: Math.min(maxLen + 4, 30) };
+  });
+  ws["!cols"] = colWidths;
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "Hasil Ujian");
+  if (kelas === "Semua" && kelasList.length > 0) {
+    const summaryRows = [["Kelas", ...mapelList.map(m => m.toUpperCase()), "Rata-rata"]];
+    kelasList.forEach(k => {
+      const rows = allData.filter(r => iKelas >= 0 && r[iKelas] == k);
+      const avgs = mapelList.map(m => {
+        const idx = mapelIndices[m];
+        if (idx === undefined) return "";
+        const nums = rows.map(r => parseFloat(r[idx])).filter(n => !isNaN(n));
+        return nums.length ? (nums.reduce((a,b)=>a+b,0)/nums.length).toFixed(1) : "";
+      });
+      const overall = avgs.filter(v => v !== "").map(Number);
+      const avg = overall.length ? (overall.reduce((a,b)=>a+b,0)/overall.length).toFixed(1) : "";
+      summaryRows.push([k, ...avgs, avg]);
+    });
+    const ws2 = XLSX.utils.aoa_to_sheet(summaryRows);
+    XLSX.utils.book_append_sheet(wb, ws2, "Rekap Per Kelas");
+  }
+  XLSX.writeFile(wb, `Hasil_Ujian_Kelas_${kelas}_${mapel}_${new Date().toLocaleDateString("id")}.xlsx`);
+}
+
+function getDemoData() {
+  const headers = ["no peserta","nama","kelas","sekolah","ruang","pabp","indonesia","pkn","matematika","sunda","informatika","inggris"];
+  const data = [
+    ["001","Andi Pratama","9A","SMPN 1","R1",85,78,90,72,88,95,80],
+    ["002","Budi Santoso","9A","SMPN 1","R1",75,82,70,88,76,68,85],
+    ["003","Citra Lestari","9B","SMPN 1","R2",90,91,88,60,92,87,93],
+    ["004","Dina Rahayu","9B","SMPN 1","R2",68,74,65,79,70,72,69],
+    ["005","Eko Wijaya","9C","SMPN 1","R3",55,60,58,45,62,70,58],
+    ["006","Fitri Handayani","9C","SMPN 1","R3",92,88,95,85,90,98,89],
+    ["007","Gilang Permana","9A","SMPN 1","R1",78,80,75,83,77,80,82],
+    ["008","Hana Safitri","9B","SMPN 1","R2",88,86,84,90,85,82,87],
+  ];
+  return { headers, data, kelasList: ["9A","9B","9C"], mapelList: ["pabp","indonesia","pkn","matematika","sunda","informatika","inggris"] };
+}
+
+window.onload = loadData;
+</script>
+</body>
+</html>
